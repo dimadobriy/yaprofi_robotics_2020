@@ -1,0 +1,82 @@
+FROM osrf/ros:kinetic-desktop-xenial
+MAINTAINER Kirill Artemov "kaartemov@itmo.ru"
+
+# TODOs
+# - add entrypoint to container
+# - modify docker run with setting container name
+# - add user to Dockerfile
+# - add Dcokerfile for intel and amd
+# - add catkin_ws creation and git clone
+# - add scripts for
+#       * work testing
+#       * build container
+#       * run container
+#       * exec container
+
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV UBUNTU_CODENAME=xenial
+ENV ROS_DISTRO=kinetic
+ENV CATKIN_DIR="$HOME/catkin_ws"
+
+ENV TZ=Europe/Moscow
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update && apt-get install -y wget mesa-utils module-init-tools xauth
+
+# Install Ubuntu additional packages
+RUN apt-get update \
+    && apt-get dist-upgrade -y \
+    && apt-get install -y --no-install-recommends \
+        apt-utils locales libxv1 va-driver-all \
+        sudo gnupg2 \
+        net-tools curl git mc tmux nano vim \
+        python-rosinstall python-rosinstall-generator python-wstool build-essential
+
+# Install python additional modules
+RUN apt-get install -y python-pip python-matplotlib python-numpy python-scipy
+RUN rm -rf /var/lib/apt/lists/*
+
+# Install ROS additional packages
+RUN /bin/bash -c "echo 'deb http://packages.ros.org/ros/ubuntu ${UBUNTU_CODENAME} main' > /etc/apt/sources.list.d/ros-latest.list && \
+                  wget -qO - http://packages.ros.org/ros.key | sudo apt-key add - && \
+                  apt-get update"
+RUN apt-get install -y ros-${ROS_DISTRO}-controller-manager \
+                        ros-${ROS_DISTRO}-ros-control \
+                        ros-${ROS_DISTRO}-joint-state-controller
+RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
+
+# Install catkin tools 
+#RUN echo 'deb http://packages.ros.org/ros/ubuntu ${UBUNTU_CODENAME} main' > /etc/apt/sources.list.d/ros-latest.list && \
+#    wget -qO - http://packages.ros.org/ros.key | sudo apt-key add - && \
+#    apt-get update && \
+RUN apt-get install -y python-catkin-tools
+
+# Create catkin workspace
+RUN bash -c "source /opt/ros/${ROS_DISTRO}/setup.bash"
+RUN mkdir -p '${HOME}/catkin_ws/src' && \
+    cd '${HOME}/catkin_ws' && \
+    catkin init
+
+# Install CoppeliaSim (prev. V-REP) simpulator
+RUN wget http://coppeliarobotics.com/files/CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz
+RUN tar -xf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz && \
+    mv CoppeliaSim_Edu_V4_0_0_Ubuntu16_04 /opt/csim && \
+    cp /opt/csim/compiledRosPlugins/libsimExtROSInterface.so /opt/csim/ && \
+    echo 'export QT_DEBUG_PLUGINS=1' >> ~/.bashrc && \
+    echo 'export PATH=/opt/csim/:${PATH}' >> ~/.bashrc
+
+RUN cd '${HOME}/catkin_ws/src'
+RUN    git clone https://github.com/be2rlab/yaprofi_robotics_2020.git
+#RUN    cd '${HOME}/catkin_ws'
+#RUN    catkin build --no-status
+#&& source ${HOME}/catkin_ws/devel/setup.bash
+
+# Some cleaning steps
+RUN rm -rf /var/lib/apt/lists/*
+RUN rm -rf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz          
+RUN rm -rf NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
+
+
+#COPY ./docker/ros_entrypoint.sh .
+CMD ["/ros_entrypoint.sh"]
