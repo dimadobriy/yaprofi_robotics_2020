@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 XAUTH=/tmp/.docker.xauth
 if [ ! -f $XAUTH ]
 then

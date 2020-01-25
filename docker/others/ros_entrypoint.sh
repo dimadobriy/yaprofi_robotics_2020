@@ -2,6 +2,7 @@
 set -e
 
 # setup ros environment
-source "/root/catkin_ws/devel/setup.bash"
+source "/opt/ros/kinetic/setup.bash"
+source "/home/catkin_ws/devel/setup.bash"
 exec "$@"
 
