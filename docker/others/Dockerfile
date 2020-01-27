@@ -7,19 +7,20 @@ ENV UBUNTU_CODENAME=xenial
 ENV ROS_DISTRO=kinetic
 ENV CATKIN_DIR="/home/catkin_ws"
 
+
 # Install Ubuntu additional packages
 RUN apt-get update \
     && apt-get dist-upgrade -y \
     && apt-get install -y --no-install-recommends \
         apt-utils locales libxv1 va-driver-all \
-        sudo gnupg2 \
+        sudo gnupg2 wget mesa-utils module-init-tools xauth \
         net-tools curl git mc tmux nano vim
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install C++ Libraries for ya-profi
-RUN apt-get install -y --no-install-recommends \
-        libvisp-dev libvisp-doc libvisp-data\
+RUN apt-get install -y \
+        libvisp-dev libvisp-doc \
         libeigen3-dev libeigen3-doc
         
 # Install Python2 Libraries for ya-profi
@@ -48,7 +49,7 @@ RUN tar -xf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz && \
 # Some cleaning steps
 RUN rm -rf /var/lib/apt/lists/*
 RUN rm -rf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz          
-RUN rm -rf NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
+
 
 
 #COPY ./docker/ros_entrypoint.sh .
