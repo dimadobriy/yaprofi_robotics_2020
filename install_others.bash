@@ -1,12 +1,12 @@
 #!/bin/bash
 
 echo "Some preparations..."
-# cd ~ && git clone https://github.com/be2rlab/yaprofi_robotics_2020.git
-mkdir -p catkin_ws/src && cd catkin_ws/src
-cd ~/yaprofi_robotics_2020 && mv ./*task ./
+cd ~ && mkdir -p catkin_ws/src && cd catkin_ws/src
+cp -r ~/yaprofi_robotics_2020/*task ./
+cd ~/yaprofi_robotics_2020
 
 echo "Installing docker dependencies"
-cd ./docker/others && sudo bash install_docker.bash
+cd ~/yaprofi_robotics_2020/docker/others && sudo bash install_docker.bash
 
 echo "Build docker image"
 sudo bash build_docker.bash

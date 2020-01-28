@@ -7,7 +7,6 @@ ENV TZ=Europe/Moscow
 ENV DEBIAN_FRONTEND noninteractive
 ENV UBUNTU_CODENAME=xenial
 ENV ROS_DISTRO=kinetic
-ENV CATKIN_DIR="/home/catkin_ws"
 
 # Install NVIDIA drivers
 ENV NVIDIA_VISIBLE_DEVICES \
@@ -62,7 +61,7 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN rm -rf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz          
 RUN rm -rf NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
 
+RUN echo 'source "/opt/ros/kinetic/setup.bash"' >> ~/.bashrc
+RUN echo 'source "/home/root/catkin_ws/devel/setup.bash"' >> ~/.bashrc
 
-COPY ./ros_entrypoint.sh /
 ENTRYPOINT ["/ros_entrypoint.sh"]
-#CMD ["/ros_entrypoint.sh"]
