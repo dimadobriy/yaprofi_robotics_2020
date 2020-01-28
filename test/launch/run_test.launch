@@ -1,0 +1,12 @@
+<launch>
+
+    <node name="roscore_and_coppeliasim" pkg="bac_task" type="run_coppeliasim.bash" />
+
+    <arg name="robots_config" value="$(find bac_task)/config/robots.yaml" />
+    <rosparam file="$(arg robots_config)" command="load" />
+
+    <node pkg="bac_task" type="robotino_kinematics.py" name="robotino_kinematics" output="screen" />
+    <node pkg="bac_task" type="robots_coppelia_sim_interface.py" name="robots_csim_interface" output="screen" />
+
+
+</launch>

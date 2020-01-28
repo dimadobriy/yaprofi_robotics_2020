@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 xhost +local:
 
-docker run -it --rm --privileged  --net=host --ipc=host \
+docker run -it --rm --privileged --net=host --ipc=host \
     --gpus all \
     --runtime=nvidia \
     --env="DISPLAY=$DISPLAY" \

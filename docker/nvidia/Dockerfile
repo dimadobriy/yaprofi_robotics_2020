@@ -3,11 +3,16 @@ MAINTAINER Kirill Artemov "kaartemov@itmo.ru"
 
 ARG NVIDIA_DRIVER_VERSION=435.21
 
+ENV HTTP_PROXY="http://proxy.ifmo.ru:3128"
+ENV HTTPS_PROXY="http://proxy.ifmo.ru:3128"
+ENV FTP_PROXY="http://proxy.ifmo.ru:3128"
+ENV ALL_PROXY="http://proxy.ifmo.ru:3128"
+ENV NO_PROXY="localhost"
+
 ENV TZ=Europe/Moscow
 ENV DEBIAN_FRONTEND noninteractive
 ENV UBUNTU_CODENAME=xenial
 ENV ROS_DISTRO=kinetic
-ENV CATKIN_DIR="/home/catkin_ws"
 
 # Install NVIDIA drivers
 ENV NVIDIA_VISIBLE_DEVICES \
@@ -63,6 +68,6 @@ RUN rm -rf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz
 RUN rm -rf NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
 
 
-COPY ./ros_entrypoint.sh /
+# COPY ./ros_entrypoint.sh /
 ENTRYPOINT ["/ros_entrypoint.sh"]
-#CMD ["/ros_entrypoint.sh"]
+# CMD ["bash"]
