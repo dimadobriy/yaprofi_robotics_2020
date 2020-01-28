@@ -1,30 +1,25 @@
 FROM osrf/ros:kinetic-desktop-xenial
 MAINTAINER Kirill Artemov "kaartemov@itmo.ru"
 
-ENV HTTP_PROXY="http://proxy.ifmo.ru:3128"
-ENV HTTPS_PROXY="http://proxy.ifmo.ru:3128"
-ENV FTP_PROXY="http://proxy.ifmo.ru:3128"
-ENV ALL_PROXY="http://proxy.ifmo.ru:3128"
-ENV NO_PROXY="localhost"
-
 ENV TZ=Europe/Moscow
 ENV DEBIAN_FRONTEND noninteractive
 ENV UBUNTU_CODENAME=xenial
 ENV ROS_DISTRO=kinetic
 ENV CATKIN_DIR="/home/catkin_ws"
 
+
 # Install Ubuntu additional packages
 RUN apt-get update \
     && apt-get dist-upgrade -y \
     && apt-get install -y --no-install-recommends \
         apt-utils locales libxv1 va-driver-all \
-        sudo gnupg2 wget mesa-utils module-init-tools \
+        sudo gnupg2 wget mesa-utils module-init-tools xauth \
         net-tools curl git mc tmux nano vim
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install C++ Libraries for ya-profi
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get install -y \
         libvisp-dev libvisp-doc \
         libeigen3-dev libeigen3-doc
         
@@ -54,7 +49,11 @@ RUN tar -xf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz && \
 # Some cleaning steps
 RUN rm -rf /var/lib/apt/lists/*
 RUN rm -rf CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz          
-RUN rm -rf NVIDIA-Linux-x86_64-${NVIDIA_DRIVER_VERSION}.run
+
+RUN echo 'source "/opt/ros/kinetic/setup.bash"' >> ~/.bashrc
+RUN echo 'source "/home/root/catkin_ws/devel/setup.bash"' >> ~/.bashrc
+
+ENTRYPOINT ["/ros_entrypoint.sh"]
 
 RUN echo 'source "/opt/ros/kinetic/setup.bash"' >> ~/.bashrc
 RUN echo 'source "/home/root/catkin_ws/devel/setup.bash"' >> ~/.bashrc

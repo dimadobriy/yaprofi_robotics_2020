@@ -6,7 +6,7 @@ cp -r ~/yaprofi_robotics_2020/*task ./
 cd ~/yaprofi_robotics_2020
 
 echo "Installing docker dependencies"
-cd ./docker/others && sudo bash install_docker.bash
+cd ~/yaprofi_robotics_2020/docker/others && sudo bash install_docker.bash
 
 echo "Build docker image"
 sudo bash build_docker.bash
