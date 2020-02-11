@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<root>
+    <camera>
+        <name>floor_camera</name>
+        <image_width>640</image_width>
+        <image_height>480</image_height>
+        <model>
+            <type>perspectiveProjWithoutDistortion</type>
+            <!--Pixel ratio-->
+            <px>600</px>
+            <py>600</py>
+            <!--Principal point-->
+            <u0>320</u0>
+            <v0>240</v0>
+        </model>
+    </camera>
+</root>

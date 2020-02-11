@@ -1,0 +1,8 @@
+int8 laps
+float32 velocity
+float32 A_x
+float32 A_y
+float32 phi
+---
+int8 status
+float32 length

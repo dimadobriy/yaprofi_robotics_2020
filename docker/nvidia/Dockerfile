@@ -44,7 +44,8 @@ RUN /bin/bash -c "echo 'deb http://packages.ros.org/ros/ubuntu ${UBUNTU_CODENAME
                   apt-get update"
 RUN apt-get install -y ros-${ROS_DISTRO}-controller-manager \
                         ros-${ROS_DISTRO}-ros-control \
-                        ros-${ROS_DISTRO}-joint-state-controller
+                        ros-${ROS_DISTRO}-joint-state-controller \
+                        ros-${ROS_DISTRO}-visp*
 
 # Install CoppeliaSim (prev. V-REP) simpulator
 RUN wget http://coppeliarobotics.com/files/CoppeliaSim_Edu_V4_0_0_Ubuntu16_04.tar.xz

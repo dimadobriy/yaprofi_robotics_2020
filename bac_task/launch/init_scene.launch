@@ -1,0 +1,25 @@
+<launch>
+
+    <param name="/use_sim_time" type="bool" value="true"/>
+    <param name="/dt" type="double" value="0.02"/>
+    <param name="rate" type="int" value="50" />
+    <param name="debug" type="bool" value="true" />
+
+    <arg name="robots_config" value="$(find bac_task)/config/robots.yaml" />
+    <rosparam file="$(arg robots_config)" command="load" />
+
+    <param name="ground_robot_name" type="str" value="robotino" />
+    <param name="drone_name" type="str" value="drone" />
+
+    <param name="drone_altitude" type="double" value="2.0" />   <!-- Initial altitude -->
+    <param name="camera_name" type="str" value="floor_camera" />
+    <param name="camera_config_file" type="str" value="$(find bac_task)/config/floor_camera.xml" />
+
+    <!-- <node name="roscore_and_coppeliasim" pkg="bac_task" type="start_scene.bash" /> -->
+    <!-- <node name="roscore_and_coppeliasim" pkg="bac_task" type="start_scene_headless.bash" /> -->
+
+    <node pkg="bac_task" type="robotino_model.py" name="robotino_model" output="screen" />
+    <node pkg="bac_task" type="robotino_trajectory_generator.py" name="robotino_trajectory_generator" output="screen" />
+    <node pkg="bac_task" type="marker_detector_node" name="marker_detector_node" output="screen" />
+
+</launch>
