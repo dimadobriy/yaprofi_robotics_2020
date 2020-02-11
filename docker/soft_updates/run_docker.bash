@@ -7,6 +7,6 @@ docker run -it --rm --privileged --net=host --ipc=host \
     --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
     --volume "/dev/input:/dev/input" \
     --volume="/home/$USER:/home/root" \
-    --name yaprofi-task-base \
-    yaprofi-task-base \
+    --name yaprofi-task-base-two \
+    yaprofi-task-base-two \
     bash

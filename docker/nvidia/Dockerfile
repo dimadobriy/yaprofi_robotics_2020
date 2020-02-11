@@ -8,6 +8,10 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV UBUNTU_CODENAME=xenial
 ENV ROS_DISTRO=kinetic
 
+RUN curl -s -L https://nvidia.github.io/nvidia-container-runtime/gpgkey | apt-key add -
+RUN distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+RUN curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.list |  tee /etc/apt/sources.list.d/nvidia-container-runtime.list
+
 # Install NVIDIA drivers
 ENV NVIDIA_VISIBLE_DEVICES \
     ${NVIDIA_VISIBLE_DEVICES:-all}

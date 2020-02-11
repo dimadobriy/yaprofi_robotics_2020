@@ -9,4 +9,4 @@ docker run -it --rm --privileged --net=host --ipc=host \
     --volume="/home/$USER:/home/root" \
     --name yaprofi-task-base \
     yaprofi-task-base \
-    bash
+    /home/root/catkin_ws/src/test/run.bash
