@@ -1,0 +1,12 @@
+{
+	"proxies":
+	{
+		"default":
+		{
+			"httpProxy": "http://82.179.191.127:3128",
+			"httpsProxy": "http://82.179.191.127:3128",
+			"ftpProxy": "http://82.179.191.127:3128",
+			"noProxy": "localhost"
+		}
+	}
+}
