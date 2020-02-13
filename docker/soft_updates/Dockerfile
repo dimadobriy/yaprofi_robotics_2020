@@ -8,7 +8,7 @@ ENV ROS_DISTRO=kinetic
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get update | apt-get install -y gnupg2 ca-certificates xauth
+RUN apt-get update | apt-get install -y gnupg2 ca-certificates
 
 # Install ROS additional packages
 RUN /bin/bash -c "echo 'deb http://packages.ros.org/ros/ubuntu ${UBUNTU_CODENAME} main' > /etc/apt/sources.list.d/ros-latest.list && \
