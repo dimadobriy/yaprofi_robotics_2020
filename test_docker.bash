@@ -6,7 +6,7 @@ docker run -it --rm --privileged --net=host --ipc=host \
     --env="QT_X11_NO_MITSHM=1" \
     --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
     --volume "/dev/input:/dev/input" \
-    --volume="/home/$USER:/home/root" \
-    --name yaprofi-task-base \
-    yaprofi-task-base \
-    /home/root/catkin_ws/src/test/run.bash
+    --volume="/home/human:/home/root" \
+    --name yaprofi-task-base-two \
+    yaprofi-task-base-two \
+    /home/root/catkin_ws/src/test/run_test_back.bash
