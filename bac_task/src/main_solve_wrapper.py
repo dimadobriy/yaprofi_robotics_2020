@@ -4,7 +4,9 @@ import rospy
 import threading
 import time
 from numpy import *
+from numpy import linalg
 
+from std_msgs.msg import Float32
 from std_srvs.srv import SetBool
 
 from main_solve import RobotinoController, DroneController
@@ -28,6 +30,8 @@ class Main:
         except rospy.service.ServiceException as se:
             # it's ok. Service already registered
             pass
+
+        self.err = rospy.Publisher("/err", Float32, queue_size=1)
 
         self.drone_controller = None
         self.robotino_controller = None
@@ -53,21 +57,33 @@ class Main:
                 rospy.loginfo('Wait for Robotino\' odometry and trajectory... (Is simulation start?)')
                 #print("Time translation... Please wait...")
                 while not rospy.is_shutdown() and self.isStarted:
-
                     if self.robotino_controller.exists_odometry() and self.robotino_controller.exists_cart_trajectory():
                         # some prepares
                         rospy.loginfo('Ready!')
-                        #self.robotino_controller.translate_time()   # ROS-timestamp -> seconds
+                        self.robotino_controller.translate_time()   # ROS-timestamp -> seconds
                         break
                     rate.sleep()
+
+                i = 0
+                N = len(self.robotino_controller.ts_d)
 
                 rospy.loginfo('Start movements!')
                 time_prev = 0
                 time_start = rospy.get_time()
                 while not rospy.is_shutdown() and self.isStarted:
                     t = rospy.get_time() - time_start
-                    #dt = t - time_prev     # !!! used global variable from simulation parameters
-                    time_prev = t
+
+                    if i < N - 2:
+                        try:
+                            t_d = next(t_d for t_d in self.robotino_controller.ts_d if t_d > t)
+                        except:
+                            print("Trajectory ended!")
+                            break
+                        i = self.robotino_controller.ts_d.index(t_d)
+                        pose = self.robotino_controller.cart_trajectory.poses[i]
+                        xyz = self.robotino_controller.odometry.pose.pose.position
+                        err = matrix([pose.x, pose.y]).T - matrix([xyz.x, xyz.y]).T
+                        self.err.publish(linalg.norm(err))
 
                     self.robotino_controller.update(dt, t)
                     self.drone_controller.update(dt, t)

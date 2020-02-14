@@ -136,7 +136,7 @@ class RobotinoController:
         ####################################################
 
         # DESIRED POSE [x, y, theta]
-        goal_pose = self.cart_trajectory.pose[i]
+        goal_pose = self.cart_trajectory.poses[i]
 
         # CURRENT POSE  
         xyz = self.odometry.pose.pose.position

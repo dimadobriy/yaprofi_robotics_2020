@@ -113,8 +113,7 @@ class RobotinoTrajectoryGenerator:
             # add the point to message
             trajectory.poses.append(Pose2D(xi, yi, theta))
             trajectory.velocities.append(Twist(Vector3(dot_xi, dot_yi, 0.), Vector3(0., 0., dot_theta)))
-            # trajectory.time_from_start.append(rospy.Duration(ti))
-            # trajectory.time_from_start.append(rospy.Duration(ti))
+            trajectory.time_from_start.append(rospy.Duration(ti))
 
             ti += self.dt
 

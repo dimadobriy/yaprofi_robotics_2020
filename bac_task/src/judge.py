@@ -10,28 +10,29 @@ import numpy
 
 from std_srvs.srv import SetBool
 from bac_task.srv import SetTrajectoryParameters
+from nav_msgs.msg import Odometry
+from std_msgs.msg import Float32
 
 from bac_task.msg import CartesianTrajectory
 
 lock = threading.Lock()
 
 RATE = 50  # [Hz]
-debug = True
-TRANSIENT_TIME = 5.0    # wait while drone stabilised on trajectory
+debug = False
+TRANSIENT_TIME = 3.0    # wait while drone stabilised on trajectory
 
 ROBOTINO_NAME = 'robotino'
 DRONE_NAME = 'drone'
 
 "TASK CRITERIA"
-T_MAX = 10.0 * 60.0  # [sec]
+T_MAX = 1.0 * 60.0  # [sec]
 ERROR_ROBOTINO_XY_MAX = 0.2  # [m]
 ERROR_DRONE_XY_MAX = 0.5  # [m]
 ERROR_DRONE_Z_MAX = 0.3  # [m]
 
 "ROUNDS PARAMETERS"
 tests_trajectories = [
-    {'laps': 10, 'velocity': 0.1, 'A_x': 1.0, 'A_y': 1.0, 'phi': -1.57, "Z0": 2.0},
-    {'laps': 10, 'velocity': 0.1, 'A_x': 2.0, 'A_y': 2.0, 'phi': -1.57, "Z0": 1.5}
+    {'laps': 1, 'velocity': 0.2, 'A_x': 1.0, 'A_y': 1.0, 'phi': -1.57, "Z0": 3.0}
 ]
 
 
@@ -49,10 +50,14 @@ class Judge:
         self.start_robots = rospy.ServiceProxy('start_robots', SetBool)
         self.set_trajectory_parameters = rospy.ServiceProxy('set_trajectory_parameters', SetTrajectoryParameters)
 
-        self.trajectory_sub = rospy.Subscriber("/robotino/trajectory", CartesianTrajectory,
-                                               self.cart_trajectory_callback)
+        self.trajectory_sub = rospy.Subscriber("/robotino/trajectory", CartesianTrajectory, self.cart_trajectory_callback)
+        self.robotino_odom_sub = rospy.Subscriber("/robotino/odom", Odometry, self.odometry_callback)
+
+        self.err_sub = rospy.Subscriber("/err", Float32, self.err_callback)
 
         self.cart_trajectory = None
+        self.odometry = None
+        self.err = Float32(0)
 
         self.total_distance = 0.0
         self.laps = 1  # quantity of laps
@@ -69,6 +74,20 @@ class Judge:
         """
         lock.acquire()
         self.cart_trajectory = msg
+        lock.release()
+
+    def odometry_callback(self, msg):
+        """
+        Odometry (state) for Robotino.
+        Can be used for feedback for trajectory controller
+        """
+        lock.acquire()
+        self.odometry = msg
+        lock.release()
+
+    def err_callback(self, msg):
+        lock.acquire()
+        self.err = msg
         lock.release()
 
     def start_simulation(self):
@@ -92,8 +111,7 @@ class Judge:
         err1 = -1
         err2 = -1
         while (err1 != 0) and (err2 != 0):
-            err1, self.robotino_base_handle = sim.simxGetObjectHandle(self.clientID, ROBOTINO_NAME,
-                                                                      sim.simx_opmode_blocking)
+            err1, self.robotino_base_handle = sim.simxGetObjectHandle(self.clientID, ROBOTINO_NAME, sim.simx_opmode_blocking)
             err2, self.drone_base_handle = sim.simxGetObjectHandle(self.clientID, DRONE_NAME, sim.simx_opmode_blocking)
         if debug: print("Objects got!")
 
@@ -135,7 +153,7 @@ class Judge:
 
             "Setup robotino trajectory and drone altitude"
             print("Trajectory setup")
-            #rospy.wait_for_service('/set_trajectory_parameters')
+            rospy.wait_for_service('/set_trajectory_parameters')
             trajectory_srv_resp = self.set_trajectory_parameters(test['laps'],
                                                                  test['velocity'],
                                                                  test['A_x'],
@@ -163,27 +181,23 @@ class Judge:
             self.start_robots(True)
             if debug: print('Robots started!')
 
+            flag_2fail = True
+
             if trajectory_srv_resp.status:  # if trajectory set
 
                 i = 0
                 t = 0.0
-                t_d = 0
                 d_prev = [0.0, 0.0, 0.0]    # drone position in previous time
+                N = len(ts_d)
                 time_start = rospy.get_time()
-                while not rospy.is_shutdown() and t < T_MAX:  # one attempt start
+                while not rospy.is_shutdown() and t < T_MAX and j < len(tests_trajectories):  # one attempt start
                     t = rospy.get_time() - time_start
 
                     "Get position of robots in CoppeliaSim scene"
                     r, d = self.get_robotino_position(), self.get_drone_position()
 
-                    "Get trajectory point for current time from /robotino/trajectory topic"
-                    # t_d = next(t_d for t_d in ts_d if t_d > t)
-                    # pose = self.cart_trajectory.poses[ts_d.index(t_d)]
-
-                    pose = self.cart_trajectory.poses[i]
-
                     "Compute errors according task specification"
-                    error_robotino_xy = numpy.sqrt((pose.x - r[0]) ** 2 + (pose.y - r[1]) ** 2)
+                    error_robotino_xy = self.err.data
                     error_drone_xy = numpy.sqrt((d[0] - r[0]) ** 2 + (d[1] - r[1]) ** 2)
                     error_drone_z = abs(Z0 - d[2])
 
@@ -195,10 +209,10 @@ class Judge:
                     if t > TRANSIENT_TIME:
                         if IS_ROBOTINO_XY_ACCURATE and IS_DRONE_XY_ACCURATE and IS_DRONE_Z_ACCURATE:
                             self.total_distance += numpy.sqrt((d[0] - d_prev[0]) ** 2 + (d[1] - d_prev[1]) ** 2)
-
-                            if self.total_distance > self.laps * trajectory_srv_resp.length:
+                            if self.total_distance > self.laps * trajectory_srv_resp.length and self.laps > 0:
                                 self.laps += 1
                                 self.fails = 0
+                                flag_2fail = True
                         else:
                             self.fails += 1
                         d_prev = d
@@ -207,25 +221,22 @@ class Judge:
                                                      "Total time: {:4.2f}\n" \
                                                      "Lap number: {}\n" \
                                                      "Total distance: {:4.2f}\n" \
-                                                     "Lap length: {:4.2f}\n" \
                                                      "Robotino error (xy-plane): {:4.2f}\n" \
                                                      "Drone error (xy-plane): {:4.2f}\n" \
                                                      "Drone error (z): {:4.2f}\n" \
-                                                     "Fails: {}"\
-                        .format(j+1, t, self.laps, self.total_distance, trajectory_srv_resp.length,
-                                error_robotino_xy, error_drone_xy, error_drone_z, self.fails)
-                    #
+                                                     "Fails: {}\n"\
+                        .format(j+1, t, self.laps, self.total_distance, error_robotino_xy, error_drone_xy, error_drone_z, self.fails)
+
                     os.system('clear')
                     sys.stdout.write('\r')
                     sys.stdout.write(log_string)
                     sys.stdout.flush()
 
-                    if self.fails == 2:
+                    if self.fails == 2 and flag_2fail:
                         self.laps -= 1
-                        rospy.sleep(2.0)  # wait a few seconds until the robots catch the trajectory again
+                        flag_2fail = False
+                        rospy.sleep(1.0)    # wait a few seconds until the robots catch the trajectory again
                     if self.fails >= 3:
-                        self.fails = 0
-                        rospy.sleep(2.0)    # wait a few seconds until the robots catch the trajectory again
                         break
 
                     i = i + 1
@@ -241,6 +252,7 @@ class Judge:
                 log_string_buffer = log_string_buffer + log_string + '\nTest failed!\n\n'
             else:
                 log_string_buffer = log_string_buffer + log_string + '\nTest succeeded!\n\n'
+
         print("\nJudge ended!")
 
 
@@ -257,3 +269,4 @@ if __name__ == '__main__':
         finally:
             judge.stop_simulation()
             del judge
+            break
