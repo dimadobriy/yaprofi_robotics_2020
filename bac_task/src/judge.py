@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+# coding: utf-8
 import sys
 import os
 import threading
+import hashlib
 
 import third_party_libs.sim as sim
 import rospy
@@ -15,31 +17,43 @@ from std_msgs.msg import Float32
 
 from bac_task.msg import CartesianTrajectory
 
+import main_solve
+
+
 lock = threading.Lock()
 
 RATE = 50  # [Hz]
 debug = False
-TRANSIENT_TIME = 3.0    # wait while drone stabilised on trajectory
+TRANSIENT_TIME = 5.0    # wait while drone stabilised on trajectory
 
 ROBOTINO_NAME = 'robotino'
 DRONE_NAME = 'drone'
 
 "TASK CRITERIA"
-T_MAX = 1.0 * 60.0  # [sec]
+T_MAX = 10.0 * 60.0  # [sec]
 ERROR_ROBOTINO_XY_MAX = 0.2  # [m]
 ERROR_DRONE_XY_MAX = 0.5  # [m]
 ERROR_DRONE_Z_MAX = 0.3  # [m]
 
 "ROUNDS PARAMETERS"
 tests_trajectories = [
-    {'laps': 1, 'velocity': 0.2, 'A_x': 1.0, 'A_y': 1.0, 'phi': -1.57, "Z0": 3.0}
+    {'laps': 10, 'velocity': 0.1, 'A_x': 1.0, 'A_y': 1.0, 'phi': -1.57, "Z0": 1.5}
+
 ]
+#    {'laps': 10, 'velocity': 0.05, 'A_x': 1.0, 'A_y': 1.0, 'phi': -1.57, "Z0": 2.0}
 
 
 class Judge:
 
-    def __init__(self):
+    def __init__(self, _author, _id, _university, _md5sum, _tests_trajectories):
         print("Judge started")
+	
+        velocity = _tests_trajectories[0]['velocity']
+        A_x = _tests_trajectories[0]['A_x']
+        A_y = _tests_trajectories[0]['A_y']
+        Z0 = _tests_trajectories[0]['Z0']
+
+        self.authors_info = u"Name:\t{}\nID:\t{}\nPlace:\t{}\nmd5:\t{}\n\n\nVelocity:\t{}\nA_x:\t{}\nA_y:\t{}\nZ0:\t{}\n\n\n".format(_author, _id, _university, _md5sum, velocity, A_x, A_y, Z0)
 
         sim.simxFinish(-1)
         self.clientID = sim.simxStart('127.0.0.1', 19997, True, True, 5000, 5)
@@ -62,6 +76,7 @@ class Judge:
         self.total_distance = 0.0
         self.laps = 1  # quantity of laps
         self.fails = 0  # quantity of fails for one lap
+	print("Judge ok!")
 
     def __del__(self):
         if debug: print('Deleting judge...')
@@ -93,8 +108,8 @@ class Judge:
     def start_simulation(self):
         if debug: print('Simulation is starting...')
         resp = -1
-        while resp != 0:
-            resp = sim.simxStartSimulation(self.clientID, sim.simx_opmode_blocking)
+        while resp != 0:#simx_opmode_blocking
+            resp = sim.simxStartSimulation(self.clientID, sim.simx_opmode_oneshot)
             time.sleep(0.1)
         if debug: print('Simulation started')
 
@@ -137,7 +152,7 @@ class Judge:
         """ Run solve testing """
         rate = rospy.Rate(RATE)
 
-        log_string_buffer = ''
+        log_string_buffer = self.authors_info
         log_string = ''
 
         "Loop for all test trajectories"
@@ -180,7 +195,7 @@ class Judge:
             rospy.wait_for_service('/start_robots')
             self.start_robots(True)
             if debug: print('Robots started!')
-
+            
             flag_2fail = True
 
             if trajectory_srv_resp.status:  # if trajectory set
@@ -192,7 +207,9 @@ class Judge:
                 time_start = rospy.get_time()
                 while not rospy.is_shutdown() and t < T_MAX and j < len(tests_trajectories):  # one attempt start
                     t = rospy.get_time() - time_start
-
+                    
+                        
+		
                     "Get position of robots in CoppeliaSim scene"
                     r, d = self.get_robotino_position(), self.get_drone_position()
 
@@ -240,6 +257,7 @@ class Judge:
                         break
 
                     i = i + 1
+                    
                     rate.sleep()
 
             else:
@@ -259,10 +277,16 @@ class Judge:
 if __name__ == '__main__':
     rospy.init_node("judge_node")
 
+    readable_hash = ''
+    filename = '/home/root/catkin_ws/src/bac_task/src/main_solve.py'
+    with open(filename,"rb") as f:
+        bytes = f.read() # read file as bytes
+        readable_hash = hashlib.md5(bytes).hexdigest();
+
     judge = None
     while not rospy.is_shutdown():
         try:
-            judge = Judge()
+            judge = Judge(main_solve.__author__, main_solve.__id__, main_solve.__university, str(readable_hash), tests_trajectories)
             judge.run()
         except rospy.ROSInterruptException as e:
             print('Restart judge_node with new ros-sim-time')

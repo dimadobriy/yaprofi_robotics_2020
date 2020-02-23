@@ -20,7 +20,7 @@ from bac_task.msg import CameraFeatures
 
 __author__ = u"Пупкин Василий Бенедиктович"
 __id__ = "123456789"
-__university = "ITMO University"
+__university__ = "ITMO University"
 
 """""""""""""""""""""""""""""""""""""""
 """""""""""""""""""""""""""""""""""""""
@@ -136,7 +136,8 @@ class RobotinoController:
         ####################################################
 
         # DESIRED POSE [x, y, theta]
-        goal_pose = self.cart_trajectory.poses[i]
+	# i = ...
+        # goal_pose = self.cart_trajectory.poses[i]
 
         # CURRENT POSE  
         xyz = self.odometry.pose.pose.position
@@ -237,4 +238,5 @@ class DroneController:
         pose.position.y = self.pos_y
         pose.position.z = self.Z0   # don't change this. It sets from judge node
         self.drone_target_pose_pub.publish(pose)
+
 
