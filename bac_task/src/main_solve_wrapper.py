@@ -79,14 +79,19 @@ class Main:
                         except:
                             print("Trajectory ended!")
                             break
-                        i = self.robotino_controller.ts_d.index(t_d)
+                        #i = self.robotino_controller.ts_d.index(t_d)
                         pose = self.robotino_controller.cart_trajectory.poses[i]
                         xyz = self.robotino_controller.odometry.pose.pose.position
                         err = matrix([pose.x, pose.y]).T - matrix([xyz.x, xyz.y]).T
                         self.err.publish(linalg.norm(err))
+                        i += 1
+                        print(err[0],err[1], linalg.norm(err))
 
-                    self.robotino_controller.update(dt, t)
-                    self.drone_controller.update(dt, t)
+                    try:
+                        self.robotino_controller.update(dt, t)
+                        self.drone_controller.update(dt, t)
+                    except AttributeError as e:
+                        print(e)
 
                     rate.sleep()
             else:
