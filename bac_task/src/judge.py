@@ -286,7 +286,7 @@ if __name__ == '__main__':
     judge = None
     while not rospy.is_shutdown():
         try:
-            judge = Judge(main_solve.__author__, main_solve.__id__, main_solve.__university, str(readable_hash), tests_trajectories)
+            judge = Judge(main_solve.__author__, main_solve.__id__, main_solve.__university__, str(readable_hash), tests_trajectories)
             judge.run()
         except rospy.ROSInterruptException as e:
             print('Restart judge_node with new ros-sim-time')
